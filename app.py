@@ -1,16 +1,18 @@
 # app.py
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import psycopg2
 from urllib.parse import urlparse
+import os
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates")  # templates folder me index.html rakho
 CORS(app)
 
 # Render External DB URL
 DATABASE_URL = 'postgresql://api_control_panel_user:P3M6R2CJbIsdePfCep1YLXxgFc7dBPgp@dpg-d4ng4r6uk2gs739r2hs0-a.oregon-postgres.render.com/api_control_panel'
 result = urlparse(DATABASE_URL)
 
+# Connect to PostgreSQL
 conn = psycopg2.connect(
     host=result.hostname,
     port=result.port,
@@ -31,6 +33,13 @@ CREATE TABLE IF NOT EXISTS api_urls (
 );
 """)
 conn.commit()
+
+# ------------------ ROUTES ------------------
+
+# Serve index.html
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 # Fetch URLs
 @app.route('/api', methods=['GET'])
@@ -57,5 +66,7 @@ def save_url():
     conn.commit()
     return jsonify({'success':True})
 
+# ------------------ RUN APP ------------------
 if __name__=="__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Render dynamically assigns port
+    app.run(host="0.0.0.0", port=port, debug=True)
