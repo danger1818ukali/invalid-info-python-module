@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Control Panel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --primary-color: #ff0040;
+    --bg-color: #050505;
+    --card-bg: rgba(10,10,10,0.7);
+    --border-color: rgba(255,0,64,0.3);
+}
+body {
+    font-family: 'Roboto Mono', monospace;
+    background-color: var(--bg-color);
+    color: #e0e0e0;
+    margin: 0;
+    overflow: hidden;
+}
+#interactive-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+}
+.glitch {
+    color: var(--primary-color);
+    text-shadow: 0 0 5px var(--primary-color),0 0 10px var(--primary-color);
+    position: relative;
+}
+.glass-ui {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    border-radius: 15px;
+    padding: 25px;
+}
+.input-field {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background-color: rgba(0,0,0,0.5);
+    color: white;
+    margin: 10px 0;
+    transition: 0.3s;
+}
+.input-field:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(255,0,64,0.7);
+}
+.btn {
+    width: 100%;
+    padding: 12px;
+    font-weight: 700;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: 0.3s;
+}
+.btn-primary {
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    color: white;
+}
+.btn-primary:hover {
+    background: transparent;
+    color: var(--primary-color);
+    box-shadow: 0 0 15px var(--primary-color);
+}
+.btn-save {
+    background-color: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+}
+.btn-save:hover {
+    background-color: var(--primary-color);
+    color: #000;
+    box-shadow: 0 0 10px var(--primary-color);
+}
+.card {
+    margin-bottom: 20px;
+}
+.main-content {
+    height: 100vh;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 2rem;
+}
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+<canvas id="interactive-bg"></canvas>
+
+<div class="main-content">
+    <h1 class="glitch" data-text="API CONTROL PANEL">API CONTROL PANEL</h1>
+
+    <div id="login-box" class="glass-ui w-full max-w-md text-center">
+        <input id="key" class="input-field" type="password" placeholder="Enter secret key">
+        <button class="btn btn-primary" onclick="login()">Login</button>
+        <p id="error" style="color:red; display:none; margin-top:10px;">Invalid key!</p>
+    </div>
+
+    <div id="dashboard" class="w-full max-w-md text-center" style="display:none;">
+        <div class="card glass-ui">
+            <h3>📱 Mobile API {number}</h3>
+            <input id="mobile_api" class="input-field" placeholder="Enter Mobile API URL">
+            <button class="btn btn-save" onclick="saveAPI('mobile_api')">Save</button>
+        </div>
+        <div class="card glass-ui">
+            <h3>🆔 Aadhar API {number}</h3>
+            <input id="aadhar_api" class="input-field" placeholder="Enter Aadhar API URL">
+            <button class="btn btn-save" onclick="saveAPI('aadhar_api')">Save</button>
+        </div>
+        <div class="card glass-ui">
+            <h3>🚘 Vehicle API</h3>
+            <input id="vehicle_api" class="input-field" placeholder="Enter Vehicle API URL">
+            <button class="btn btn-save" onclick="saveAPI('vehicle_api')">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// LOGIN FUNCTIONALITY
+const MASTER_KEY = "ayushking";
+function login() {
+    const userKey = document.getElementById("key").value;
+    if(userKey === MASTER_KEY) {
+        document.getElementById("login-box").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+
+        // Fetch and fill saved URLs automatically
+        loadSavedAPIs();
+    } else {
+        document.getElementById("error").style.display="block";
+    }
+}
+
+async function saveAPI(field) {
+    const value = document.getElementById(field).value;
+    try {
+        await fetch('http://localhost:5000/api', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({field,value})
+        });
+        alert("Saved Successfully to Database!");
+    } catch(e){
+        alert("Error saving to database: "+e);
+    }
+}
+
+const WORKER_URL = 'https://odd-credit-ea53.pagals1818.workers.dev/';
+
+async function loadSavedAPIs(){
+    try{
+        // agar Worker GET me koi param expect karta hai
+        const res = await fetch(`${WORKER_URL}?url=fetch`);
+        const data = await res.json();
+        console.log("Fetched data:", data);
+
+        document.getElementById("mobile_api").value = data.mobile || "";
+        document.getElementById("aadhar_api").value = data.aadhar || "";
+        document.getElementById("vehicle_api").value = data.vehicle || "";
+    }catch(e){
+        console.log("Error fetching from Worker:", e);
+    }
+}
+
+
+// THREE.JS BACKGROUND
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({canvas: document.getElementById('interactive-bg'), alpha:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+const particlesGeometry = new THREE.BufferGeometry();
+const particlesCnt = 5000;
+const posArray = new Float32Array(particlesCnt*3);
+for(let i=0;i<particlesCnt*3;i++){ posArray[i]=(Math.random()-0.5)*5; }
+particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray,3));
+const particlesMaterial = new THREE.PointsMaterial({ size:0.005, color:0xff0040 });
+const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+scene.add(particlesMesh);
+camera.position.z=2;
+const animate = ()=>{
+    requestAnimationFrame(animate);
+    particlesMesh.rotation.y+=0.0001;
+    particlesMesh.rotation.x+=0.0002;
+    renderer.render(scene,camera);
+}
+animate();
+window.addEventListener('resize', ()=>{
+    renderer.setSize(window.innerWidth,window.innerHeight);
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+});
+</script>
+</body>
+</html>
