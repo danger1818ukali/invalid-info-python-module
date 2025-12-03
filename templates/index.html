@@ -135,54 +135,56 @@ h1 {
 </div>
 
 <script>
-// LOGIN FUNCTIONALITY
+// ====== CONFIG ======
 const MASTER_KEY = "ayushking";
+const BASE_URL = "https://invalid-info-python-module-by-ayush.onrender.com";
+
+// ====== LOGIN ======
 function login() {
     const userKey = document.getElementById("key").value;
     if(userKey === MASTER_KEY) {
         document.getElementById("login-box").style.display = "none";
         document.getElementById("dashboard").style.display = "block";
-
-        // Fetch and fill saved URLs automatically
         loadSavedAPIs();
     } else {
         document.getElementById("error").style.display="block";
     }
 }
 
+// ====== SAVE API ======
 async function saveAPI(field) {
     const value = document.getElementById(field).value;
     try {
-        await fetch('http://localhost:5000/api', {
+        const res = await fetch(`${BASE_URL}/api`, {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({field,value})
+            body: JSON.stringify({field, value})
         });
-        alert("Saved Successfully to Database!");
+        const data = await res.json();
+        if(data.success){
+            alert("Saved Successfully to Database!");
+        } else if(data.error){
+            alert("Error: " + data.error);
+        }
     } catch(e){
         alert("Error saving to database: "+e);
     }
 }
 
-const WORKER_URL = 'https://odd-credit-ea53.pagals1818.workers.dev/';
-
+// ====== LOAD SAVED APIs ======
 async function loadSavedAPIs(){
     try{
-        // agar Worker GET me koi param expect karta hai
-        const res = await fetch(`${WORKER_URL}?url=fetch`);
+        const res = await fetch(`${BASE_URL}/api`);
         const data = await res.json();
-        console.log("Fetched data:", data);
-
-        document.getElementById("mobile_api").value = data.mobile || "";
-        document.getElementById("aadhar_api").value = data.aadhar || "";
-        document.getElementById("vehicle_api").value = data.vehicle || "";
+        document.getElementById("mobile_api").value = data.mobile_api || "";
+        document.getElementById("aadhar_api").value = data.aadhar_api || "";
+        document.getElementById("vehicle_api").value = data.vehicle_api || "";
     }catch(e){
-        console.log("Error fetching from Worker:", e);
+        console.log("Error fetching APIs:", e);
     }
 }
 
-
-// THREE.JS BACKGROUND
+// ====== THREE.JS BACKGROUND ======
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({canvas: document.getElementById('interactive-bg'), alpha:true});
